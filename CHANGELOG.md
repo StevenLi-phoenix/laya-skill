@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- Install docs default to repo-level installs: `--scope project` for the plugin commands, or
+  copying the skill into `<repo>/.claude/skills/`. No global (`~/.claude`) install is suggested any more.
+
 ## [0.1.0] - 2026-09-29
 
 ### Added

@@ -17,15 +17,24 @@ Code only: **no model weights** are in this repo. Checkpoints download from Hugg
 
 ## Install
 
-```bash
-# as a plugin (in Claude Code)
-/plugin marketplace add StevenLi-phoenix/laya-skill
-/plugin install system-one@laya-skill
+Install per repository (project scope), not globally. Run these from the root of the repo that
+should get the skill:
 
-# or as a plain skill
-git clone https://github.com/StevenLi-phoenix/laya-skill
-ln -s "$PWD/laya-skill/skills/system-one" ~/.claude/skills/system-one
+```bash
+# as a plugin: declared in <repo>/.claude/settings.json (commit it to share with the team)
+claude plugin marketplace add StevenLi-phoenix/laya-skill --scope project
+claude plugin install system-one@laya-skill --scope project
+
+# or as a plain skill, copied into <repo>/.claude/skills/
+git clone --depth 1 https://github.com/StevenLi-phoenix/laya-skill /tmp/laya-skill
+mkdir -p .claude/skills && cp -R /tmp/laya-skill/skills/system-one .claude/skills/
 ```
+
+Both commands default to `--scope user` (global), so pass `--scope project` explicitly. Use
+`--scope local` to keep the declaration in the git-ignored `.claude/settings.local.json`. With
+project scope, `~/.claude/settings.json` stays untouched. Claude Code still keeps its plugin
+cache and install registry under `~/.claude/plugins/`, as it does for every plugin. To remove:
+`claude plugin uninstall system-one@laya-skill --scope project`.
 
 Requires [uv](https://docs.astral.sh/uv/). Every script is a PEP 723 `uv run` script that pins
 `laya==0.3.22`. For the browser sample you need Chrome with WebGPU.
