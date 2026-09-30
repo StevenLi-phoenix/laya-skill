@@ -11,8 +11,10 @@ The skill directory may be read-only or shared (plugin cache), so copy the sampl
 
 ```bash
 cp -R <skill>/assets/webgpu ./laya-webgpu && cd laya-webgpu
-./export_model.sh                       # standalone: clones laya @6d942c9 into ./.laya-src, exports multilingual → ./model
+./export_model.sh typed-decisions --q4  # standalone: clones laya @6d942c9 into ./.laya-src, exports + 4-bit → ./model (467 MB)
+./export_model.sh multilingual          # fp32, 100+ languages (1.3 GB)
 # or with the skill's exporter, from any checkpoint including a fine-tune:
+uv run <skill>/scripts/export_onnx.py --model typed-decisions --target browser --out-dir ./model --quantize
 uv run <skill>/scripts/export_onnx.py --model multilingual --target browser --out-dir ./model
 uv run <skill>/scripts/export_onnx.py --model runs/ft/checkpoint --target browser --out-dir ./model
 python3 -m http.server 8765    # then open http://127.0.0.1:8765/
@@ -57,14 +59,50 @@ Note the noul: the Python Router sends this English text to the **English** chec
 0.879. The browser sample loads **multilingual** and gets 0.045. Checkpoints disagree on zero-shot
 noul, which is one more reason to give `noul` explicit criteria and to calibrate on your own data.
 
+## Smaller downloads: 4-bit (q4)
+
+`export_onnx.py --target browser --quantize` (or `export_model.sh <ckpt> --q4`) runs `tools/quantize_q4.py`:
+ONNX Runtime's `MatMulNBitsQuantizer`, 4 bit, block 32, symmetric, over every weight MatMul of the encoder
+(112 for ModernBERT-large) and the head (8). The token embedding is a Gather and stays fp32. The result is
+deterministic: a fresh export is byte-identical to the published
+[Steven10429/laya-typed-decisions-webgpu-q4](https://huggingface.co/Steven10429/laya-typed-decisions-webgpu-q4).
+
+Measured on typed-decisions. Fidelity comes from `tools/eval_onnx.mjs` (Node, CPU) on the 40 example tickets × 3
+questions. Speed is Chrome on an M4 Pro, 3 questions / 163 tokens:
+
+| variant | size | WebGPU p50 | WASM p50 | agrees with fp32 | max drift | dept / urgency / churn acc |
+|---|---|---|---|---|---|---|
+| fp32 | 1.69 GB | 265 ms | 2443 ms | — | — | 0.875 / 0.425 / 0.700 |
+| **q4 enc + head** | **467 MB** | **361 ms** | ~2.8 s | 110 / 120 | 0.22 | 0.875 / 0.450 / 0.625 |
+| q4 enc only | 534 MB | 350 ms | 2777 ms | 110 / 120 | 0.22 | same as above |
+| q4 asym b32 / sym b16 / asym b16 | 539–588 MB | — | — | 110–114 / 120 | 0.14–0.25 | within ±2 answers |
+| q8 | 705 MB | **2800 ms** | 2792 ms | 119 / 120 | 0.013 | 0.900 / 0.425 / 0.700 |
+
+What this means:
+
+- **q8 is a trap in the browser.** ORT Web has no 8-bit MatMulNBits WebGPU kernel, so those nodes run on the CPU.
+  The session still reports WebGPU because the rest of the graph is on the GPU. Only the timing gives it away,
+  which is why the `--force-wasm` baseline matters. Use q8 on CPU / Node only.
+- q4 is slower than fp32 on the GPU (dequantization), but the first download is 3.6× smaller: 18–20 s from Hugging Face
+  (measured), vs 33 s for the 1.3 GB multilingual export. For a web page, the first load usually decides.
+- q4 changes about 8 % of decisions relative to fp32, and 40 tickets is a small set. Re-pick thresholds on your own
+  held-out data, and compare with `pnpm install && pnpm eval` (in `assets/webgpu/`) before shipping.
+- Quantizing the multilingual checkpoint helps much less. Its 256k-token embedding is ~786 MB of fp32 Gather
+  that MatMulNBits does not touch.
+- `typed-decisions` is English-only, and it is bigger (ModernBERT-large) than multilingual (mmBERT-base).
+  On the English billing preset it gets churn right (0.765), where multilingual says 0.045.
+
 ## Hosted demo and embedding (iframe / itch.io)
 
-Live demo: **https://stevenli-phoenix-work.itch.io/laya-webgpu** (itch.io HTML embed, 1100×820).
-Weights: **https://huggingface.co/Steven10429/laya-multilingual-webgpu**, the same fp32 split export
-as `model/`, public, Apache-2.0 with attribution.
+Live demo: **https://stevenli-phoenix-work.itch.io/laya-webgpu** (itch.io HTML embed, 1100×820); source:
+**https://github.com/game-design-projects/laya-webgpu**. The page has a model picker. The default is
+[typed-decisions q4](https://huggingface.co/Steven10429/laya-typed-decisions-webgpu-q4) (467 MB); the alternative is
+[multilingual fp32](https://huggingface.co/Steven10429/laya-multilingual-webgpu) (1.3 GB). Both are public and
+Apache-2.0 with attribution. On localhost a third `./model/` option appears.
 
 The page chooses its model URL in this order: `?model=<url>`, then `./model/` when served from
-`localhost` / `127.0.0.1`, then the Hugging Face mirror everywhere else. To point it at your own
+`localhost` / `127.0.0.1`, then the q4 Hugging Face mirror everywhere else. After loading, the picker collapses so
+the run controls fit the iframe. To point it at your own
 export (for example a fine-tune pushed to the Hub), pass `?model=https://huggingface.co/<you>/<repo>/resolve/main/`.
 
 Things that matter when embedding:

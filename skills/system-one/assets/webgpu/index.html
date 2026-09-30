@@ -56,6 +56,14 @@
   button.ghost { background: transparent; color: var(--ink); }
   button:disabled { opacity: .35; cursor: not-allowed; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .picks { margin-top: 0; }
+  .pick { flex: 1 1 200px; text-align: left; background: transparent; color: var(--ink); border: 1.5px solid var(--line);
+    padding: 9px 12px; font-weight: 400; }
+  .pick b { display: block; font-size: 14px; }
+  .pick small { color: var(--muted); font: 11.5px "JetBrains Mono", monospace; }
+  .pick.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .pick:disabled { opacity: .5; }
+  .loaded .picks, .loaded .pre { display: none; }
   .presets button { font-size: 12.5px; padding: 5px 11px; background: transparent; color: var(--ink); border-color: var(--line); }
   .presets button.sel { border-color: var(--accent); color: var(--accent); }
 
@@ -118,11 +126,12 @@
   <div class="grid">
     <section class="panel">
       <h2><span>01 · 模型</span><span id="load-time" class="mono"></span></h2>
-      <label for="model">模型目录（encoder.onnx + head.onnx + tokenizer.json + rl_agent_config.json）</label>
-      <input id="model" class="mono" value="./model/">
+      <div class="row picks" id="picks" role="radiogroup" aria-label="模型"></div>
+      <label for="model" class="pre">模型地址（目录里要有 encoder.onnx + head.onnx + tokenizer.json + rl_agent_config.json）</label>
+      <input id="model" class="mono pre" value="./model/">
       <div class="row"><button id="load">加载模型</button><button id="clear" class="ghost">清空缓存</button></div>
       <div class="progress" hidden id="progress"><i></i></div>
-      <div class="log" id="log">点「加载模型」开始下载：约 1.3 GB（fp32 multilingual），只下载一次，之后走浏览器缓存。</div>
+      <div class="log" id="log">选一个模型，点「加载模型」。只下载一次，之后走浏览器缓存。</div>
 
       <h2 style="margin-top:22px"><span>02 · 输入 state</span></h2>
       <div class="row presets" id="presets"></div>
@@ -151,7 +160,7 @@
 
   <footer>
     推理：<code>laya-ts</code>（vendored from NandhaKishorM/laya @ 6d942c9, Apache‑2.0）+ <code>onnxruntime-web 1.30</code>；encoder 跑 WebGPU（不可用时降到 WASM），decision head 跑 WASM。
-    权重：<code>huggingface.co/Steven10429/laya-multilingual-webgpu</code>（convaiinnovations/laya multilingual 的 ONNX 导出）。
+    权重：<code>Steven10429/laya-typed-decisions-webgpu-q4</code>（4‑bit，467 MB）与 <code>Steven10429/laya-multilingual-webgpu</code>（fp32，1.3 GB），均为 convaiinnovations/laya 的 ONNX 导出。
   </footer>
 </div>
 

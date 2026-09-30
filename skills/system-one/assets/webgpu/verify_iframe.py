@@ -180,8 +180,9 @@ def main() -> int:
     ap.add_argument("--shot-dir", default=str(HERE))
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    if not (HERE / "model" / "encoder.onnx").exists():
-        log.error("no model at %s — run ./export_model.sh first", HERE / "model")
+    needs_local = not os.environ.get("MODEL_URL") or args.scenario in ("nocors", "all")
+    if needs_local and not (HERE / "model" / "encoder.onnx").exists():
+        log.error("no model at %s — run ./export_model.sh first (or set MODEL_URL and pick --scenario itch|noallow)", HERE / "model")
         return 2
     ports = {"parent": 8866, "game": 8868, "model": 8867, "model_nocors": 8869}
     servers = [serve(HERE, ports["game"], cors=False), serve(HERE / "model", ports["model"], cors=True),

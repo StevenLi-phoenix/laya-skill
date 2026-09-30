@@ -23,7 +23,7 @@ Set `S=<this skill dir>/scripts`.
 3. **If zero-shot accuracy is not enough → fine-tune Laya** on your labels. Base checkpoints are
    near chance on hard multi-workflow decisions (0.36 vs 0.318 random); the fine-tuned one reaches
    0.766. Treat Laya as a fast base to specialise.
-4. **Browser / no server** → export to ONNX and run with laya-ts on WebGPU (`assets/webgpu/`).
+4. **Browser / no server** → export to ONNX (`--quantize` = 4-bit, ~3.6× smaller, still WebGPU) and run with laya-ts (`assets/webgpu/`).
 
 Probabilities are not interchangeable between models: after any switch, re-pick thresholds on
 held-out data. Details and benchmark caveats: `references/model-selection.md`.
@@ -49,7 +49,7 @@ uv run $S/finetune_laya.py --data train.jsonl --base english --out runs/ft
 uv run $S/laya_predict.py --model runs/ft/checkpoint --state "..." --questions q.json
 
 # ONNX: browser (split, for laya-ts/WebGPU) or CPU (flat, optional INT8)
-uv run $S/export_onnx.py --model runs/ft/checkpoint --target browser --out-dir ./webgpu/model
+uv run $S/export_onnx.py --model runs/ft/checkpoint --target browser --out-dir ./webgpu/model --quantize   # q4; drop --quantize for fp32
 ```
 
 Data format for `compare.py` / `finetune_laya.py` (the `laya-evals` format), one line each:
@@ -73,4 +73,4 @@ Example: `assets/examples/tickets.jsonl` (40 tickets, EN/中文/ES).
 - `references/model-selection.md` — Jev vs Laya vs fine-tuned Laya, benchmarks and their caveats
 - `references/finetune.md` — data prep, the RLCD recipe, calibration, evaluation, memory, pushing
 - `references/serving.md` — laya-serve (Jev-compatible HTTP), swapping clients, MCP, ONNX on CPU
-- `references/webgpu.md` — the browser sample, export, verification, measured MBP vs mini numbers
+- `references/webgpu.md` — the browser sample, export, q4 quantization trade-offs, iframe/itch embedding, measured numbers

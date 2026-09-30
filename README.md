@@ -6,7 +6,7 @@ A Claude Code skill (and plugin) for **typed-decision models**: a state (text / 
 `choice` / `score` / `noul` questions go in, and calibrated probabilities come out in one forward pass,
 with no text generation.
 
-**Live browser demo:** [stevenli-phoenix-work.itch.io/laya-webgpu](https://stevenli-phoenix-work.itch.io/laya-webgpu) (WebGPU, weights from [Steven10429/laya-multilingual-webgpu](https://huggingface.co/Steven10429/laya-multilingual-webgpu)).
+**Live browser demo:** [stevenli-phoenix-work.itch.io/laya-webgpu](https://stevenli-phoenix-work.itch.io/laya-webgpu) (WebGPU; typed-decisions q4, 467 MB, or multilingual fp32; source: [game-design-projects/laya-webgpu](https://github.com/game-design-projects/laya-webgpu)).
 
 - **Laya** ([NandhaKishorM/laya](https://github.com/NandhaKishorM/laya), Apache-2.0): run locally on
   CPU / MPS / CUDA, **in the browser on WebGPU**, or as a Jev-compatible HTTP server.
@@ -90,6 +90,18 @@ tests/                     pytest (unit + mocked Jev HTTP + LAYA_INTEGRATION=1 w
 
 The answers were identical on both providers and both machines.
 
+**4-bit browser export** (`export_onnx.py --target browser --quantize`, `typed-decisions`, MacBook Pro M4 Pro, Chrome):
+
+| typed-decisions | size | WebGPU p50 | agrees with fp32 (120 decisions) | max prob drift |
+|---|---|---|---|---|
+| fp32 | 1.69 GB | 265 ms | — | — |
+| **q4 (encoder + head)** | **467 MB** | 361 ms | 110 / 120 | 0.22 |
+| q8 | 705 MB | ≈ WASM (2.8 s): no 8-bit WebGPU kernel | 119 / 120 | 0.013 |
+
+The q4 build is the default model in the [live demo](https://stevenli-phoenix-work.itch.io/laya-webgpu). Its
+weights are at [Steven10429/laya-typed-decisions-webgpu-q4](https://huggingface.co/Steven10429/laya-typed-decisions-webgpu-q4),
+and the page is also a standalone repo: [game-design-projects/laya-webgpu](https://github.com/game-design-projects/laya-webgpu).
+
 **Laya checkpoints, zero-shot, on the bundled 40-ticket example set** (Mac mini M4, MPS, `compare.py`):
 
 | backend | accuracy | choice | noul | score (level) | ECE | p50 |
@@ -122,6 +134,7 @@ interchangeable, so re-pick thresholds whenever you switch.
 uv venv --python 3.12 && uv pip install laya==0.3.22 pytest
 .venv/bin/python -m pytest -q                        # unit + mocked HTTP, no weights
 LAYA_INTEGRATION=1 .venv/bin/python -m pytest -q     # + real inference and fine-tune smoke
+uv run --with pytest --with onnx --with onnx-ir --with onnxruntime --with numpy pytest -q tests/test_quantize_q4.py   # q4 quantizer
 uv run skills/system-one/assets/webgpu/verify_webgpu.py [--force-wasm]   # after exporting model/
 ```
 

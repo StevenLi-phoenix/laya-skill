@@ -1,6 +1,9 @@
 model/
+.model-fp32/
 .laya-src/
+node_modules/
 *.onnx
 *.onnx.data
 *.safetensors
-screenshot.png
+/screenshot.png
+__pycache__/

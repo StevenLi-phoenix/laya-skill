@@ -97,6 +97,7 @@ $("load").onclick = async () => {
     chip("chip-model", `${name} · max_len ${agent.maxLen}`, "on");
     setEp();
     $("run").disabled = $("bench").disabled = false;
+    $("load").closest(".panel").classList.add("loaded");  // collapse the picker so the run controls fit
     log("loaded in", s, "s");
   } catch (e) {
     $("log").textContent = `加载失败：${e.message}`;
@@ -193,11 +194,34 @@ $("text").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaK
 
 // ?model=<url> points the page at weights hosted elsewhere (itch.io caps uploads at 200 MB/file, so an
 // embedded build must fetch the ~1.3 GB export cross-origin from a CORS-enabled host).
-// Default: ./model/ when served from this machine, the public Hugging Face mirror anywhere else.
-const HOSTED_MODEL = "https://huggingface.co/Steven10429/laya-multilingual-webgpu/resolve/main/";
+// Hosted exports on Hugging Face (CORS-enabled, so they load inside an itch.io iframe too).
+const HF = "https://huggingface.co/Steven10429/";
+const MODELS = [
+  { id: "q4", name: "typed-decisions · q4", meta: "English · 4-bit · 467 MB", url: `${HF}laya-typed-decisions-webgpu-q4/resolve/main/`, en: true },
+  { id: "ml", name: "multilingual · fp32", meta: "100+ 语言 · 1.3 GB", url: `${HF}laya-multilingual-webgpu/resolve/main/`, en: false },
+];
 const isLocal = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+if (isLocal) MODELS.push({ id: "local", name: "本地 ./model/", meta: "export_model.sh 的输出", url: "./model/", en: null });
 const modelParam = new URLSearchParams(location.search).get("model");
-$("model").value = modelParam || (isLocal ? "./model/" : HOSTED_MODEL);
+
+function pickModel(id) {
+  const m = MODELS.find((x) => x.id === id);
+  [...$("picks").children].forEach((b) => { b.classList.toggle("sel", b.dataset.id === id); b.setAttribute("aria-checked", b.dataset.id === id); });
+  if (m) { $("model").value = m.url; log("picked model", m.id, m.url); }
+  // typed-decisions is English-only: point that out when a non-English preset is active.
+  $("log").textContent = m?.en === true ? "typed-decisions 只懂英文；中文 / 印地语 / 西语预设请换 multilingual。只下载一次，之后走缓存。"
+    : "点「加载模型」开始下载，只下载一次，之后走浏览器缓存。";
+}
+for (const m of MODELS) {
+  const b = document.createElement("button");
+  b.className = "pick"; b.dataset.id = m.id; b.setAttribute("role", "radio");
+  b.innerHTML = `<b>${m.name}</b><small>${m.meta}</small>`;
+  b.onclick = () => pickModel(m.id);
+  $("picks").append(b);
+}
+$("model").addEventListener("input", () => [...$("picks").children].forEach((b) => b.classList.remove("sel")));
+const fromParam = modelParam && MODELS.find((m) => m.url === modelParam);
+if (modelParam && !fromParam) { $("model").value = modelParam; } else { pickModel(fromParam ? fromParam.id : isLocal ? "local" : "q4"); }
 log("model url", $("model").value, modelParam ? "(query)" : isLocal ? "(local default)" : "(hosted default)");
 log("embedded", window.top !== window.self, "crossOriginIsolated", window.crossOriginIsolated);
 

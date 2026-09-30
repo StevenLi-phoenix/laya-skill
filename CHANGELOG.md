@@ -6,6 +6,27 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-29
+
+### Added
+- 4-bit browser export: `export_onnx.py --target browser --quantize` and `assets/webgpu/export_model.sh <ckpt> --q4`
+  quantize encoder + head with `MatMulNBits` (block 32, symmetric) through the unit-tested
+  `assets/webgpu/tools/quantize_q4.py`. typed-decisions goes from 1.69 GB to 467 MB, 110/120 decisions equal
+  to fp32, and it still runs on WebGPU (361 ms p50).
+- `assets/webgpu/tools/eval_onnx.mjs` (+ `package.json`, `pnpm eval`): accuracy, agreement and probability drift of
+  split exports on a labelled JSONL, in Node on the CPU.
+- Model picker in the WebGPU page: typed-decisions q4 (default, hosted at
+  `huggingface.co/Steven10429/laya-typed-decisions-webgpu-q4`), multilingual fp32, and local `./model/`.
+- The WebGPU page is also a standalone repo: `github.com/game-design-projects/laya-webgpu`.
+- Measured q4 / q8 / fp32 trade-offs (`references/webgpu.md`), including the finding that 8-bit MatMulNBits has
+  no WebGPU kernel and silently runs on the CPU.
+- `tests/test_quantize_q4.py`.
+
+### Changed
+- The WebGPU page collapses the model picker after loading, so the run controls fit itch's `scrolling="no"` iframe.
+- `verify_iframe.py` no longer needs a local `./model` when `MODEL_URL` is set.
+- `export_model.sh` takes a checkpoint name (`typed-decisions` by default) and `--q4`.
+
 ### Added
 - WebGPU sample works embedded in a cross-site iframe (itch.io). `verify_iframe.py` reproduces the itch
   setup on three loopback origins (itch `allow` attribute, bare iframe, model host without CORS), and

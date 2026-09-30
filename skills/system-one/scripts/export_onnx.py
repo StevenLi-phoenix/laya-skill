@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10,<3.14"
-# dependencies = ["laya==0.3.22", "onnx", "onnxruntime", "onnxscript"]
+# dependencies = ["laya==0.3.22", "onnx", "onnx-ir", "onnxruntime", "onnxscript"]
 # ///
 """Export a Laya checkpoint (bundled, Hub or a local fine-tune) to ONNX.
 
   --target browser   split encoder.onnx + head.onnx + tokenizer.json for laya-ts / the WebGPU
-                     sample (upstream laya-ts/scripts/export_onnx.py; verifies torch vs ONNX to 1e-4)
+                     sample (upstream laya-ts/scripts/export_onnx.py; verifies torch vs ONNX to 1e-4);
+                     --quantize makes it 4-bit (MatMulNBits, encoder + head): typed-decisions
+                     1.69 GB -> 467 MB, 110/120 decisions equal to fp32, runs on WebGPU
   --target cpu       one flat graph for laya.ONNXAgent / `laya-evals run --onnx`
                      (upstream scripts/export_onnx.py); --quantize adds an INT8 copy (CPU only)
 
 Examples:
   uv run export_onnx.py --model multilingual --target browser --out-dir ./webgpu/model
   uv run export_onnx.py --model runs/finetune/checkpoint --target browser --out-dir ./webgpu/model
+  uv run export_onnx.py --model typed-decisions --target browser --out-dir ./webgpu/model --quantize
   uv run export_onnx.py --model english --target cpu --out-dir ./onnx --quantize
 fp32 output is large (~1.3 GB multilingual, ~1.7 GB english); keep it out of git.
 """
@@ -20,12 +23,14 @@ from __future__ import annotations
 
 import argparse
 import logging
+import shutil
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+QUANTIZER = HERE.parent / "assets" / "webgpu" / "tools" / "quantize_q4.py"
 sys.path.insert(0, str(HERE))
 from finetune_laya import resolve_base
 from systemone import setup_logging
@@ -38,19 +43,19 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--model", default="multilingual", help="english | multilingual | typed-decisions | <dir> | org/repo[:subfolder]")
     ap.add_argument("--target", choices=["browser", "cpu"], default="browser")
     ap.add_argument("--out-dir", required=True)
-    ap.add_argument("--quantize", action="store_true", help="cpu target only: also write an INT8 copy")
+    ap.add_argument("--quantize", action="store_true",
+                    help="browser: 4-bit MatMulNBits (WebGPU-capable); cpu: also write an INT8 copy")
     ap.add_argument("--no-verify", action="store_true", help="browser target: skip the torch-vs-ONNX check")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args(argv)
     setup_logging(args.verbose)
-    if args.quantize and args.target != "cpu":
-        ap.error("--quantize applies to --target cpu (ONNX Runtime web has no INT8 MatMul path here)")
 
     ckpt, ref = resolve_base(args.model)
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    fp32_out = out / ".fp32" if (args.target == "browser" and args.quantize) else out
     if args.target == "browser":
-        cmd = [sys.executable, str(HERE / "vendor/export_onnx_split.py"), "--model-dir", ckpt, "--out-dir", str(out)]
+        cmd = [sys.executable, str(HERE / "vendor/export_onnx_split.py"), "--model-dir", ckpt, "--out-dir", str(fp32_out)]
         if args.no_verify:
             cmd.append("--no-verify")
     else:
@@ -60,6 +65,11 @@ def main(argv: list[str] | None = None) -> int:
     log.info("exporting %s -> %s (%s)", ref, out, args.target)
     t0 = time.perf_counter()
     subprocess.run(cmd, check=True)
+    if fp32_out != out:
+        # One quantizer for the skill: the WebGPU sample's tools/quantize_q4.py (unit-tested).
+        log.info("quantizing to 4 bit (MatMulNBits, block 32, symmetric; encoder + head)")
+        subprocess.run([sys.executable, str(QUANTIZER), str(fp32_out), str(out), "--head"], check=True)
+        shutil.rmtree(fp32_out)
     size = sum(p.stat().st_size for p in out.rglob("*") if p.is_file())
     log.info("done in %.0fs, %.2f GB in %s", time.perf_counter() - t0, size / 1e9, out)
     for p in sorted(out.iterdir()):

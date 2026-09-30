@@ -1,0 +1,14 @@
+{
+  "name": "laya-webgpu",
+  "private": true,
+  "type": "module",
+  "description": "Laya typed decisions in the browser on WebGPU (laya-ts + onnxruntime-web)",
+  "scripts": {
+    "serve": "python3 -m http.server 8765",
+    "eval": "node tools/eval_onnx.mjs tools/tickets.jsonl"
+  },
+  "devDependencies": {
+    "onnxruntime-node": "1.30.0"
+  },
+  "license": "Apache-2.0"
+}
