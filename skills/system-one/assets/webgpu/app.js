@@ -92,7 +92,9 @@ $("load").onclick = async () => {
     const s = ((performance.now() - t0) / 1000).toFixed(1);
     $("load-time").textContent = `${s}s`;
     $("log").textContent = `加载完成，用时 ${s}s。`;
-    chip("chip-model", `${url.split("/").filter(Boolean).pop()} · max_len ${agent.maxLen}`, "on");
+    const parts = url.split("/").filter(Boolean);
+    const name = parts.includes("resolve") ? parts[parts.indexOf("resolve") - 1] : parts.pop();
+    chip("chip-model", `${name} · max_len ${agent.maxLen}`, "on");
     setEp();
     $("run").disabled = $("bench").disabled = false;
     log("loaded in", s, "s");
@@ -188,6 +190,16 @@ $("bench").onclick = async () => {
 };
 
 $("text").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) $("run").click(); });
+
+// ?model=<url> points the page at weights hosted elsewhere (itch.io caps uploads at 200 MB/file, so an
+// embedded build must fetch the ~1.3 GB export cross-origin from a CORS-enabled host).
+// Default: ./model/ when served from this machine, the public Hugging Face mirror anywhere else.
+const HOSTED_MODEL = "https://huggingface.co/Steven10429/laya-multilingual-webgpu/resolve/main/";
+const isLocal = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+const modelParam = new URLSearchParams(location.search).get("model");
+$("model").value = modelParam || (isLocal ? "./model/" : HOSTED_MODEL);
+log("model url", $("model").value, modelParam ? "(query)" : isLocal ? "(local default)" : "(hosted default)");
+log("embedded", window.top !== window.self, "crossOriginIsolated", window.crossOriginIsolated);
 
 probeGpu();
 renderPresets();

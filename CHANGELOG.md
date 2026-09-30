@@ -6,7 +6,18 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- WebGPU sample works embedded in a cross-site iframe (itch.io). `verify_iframe.py` reproduces the itch
+  setup on three loopback origins (itch `allow` attribute, bare iframe, model host without CORS), and
+  can also load from a remote `MODEL_URL`.
+- Public weight mirror for the sample: `huggingface.co/Steven10429/laya-multilingual-webgpu` (fp32 split
+  export of `convaiinnovations/laya` multilingual). Live demo at `stevenli-phoenix-work.itch.io/laya-webgpu`.
+- `?model=<url>` query parameter to point the sample at any CORS-enabled export.
+
 ### Changed
+- The sample picks `./model/` on localhost and the Hugging Face mirror elsewhere.
+- Desktop layout fits one viewport with per-panel scrolling, so the controls stay reachable inside
+  itch's `scrolling="no"` iframe. The model chip shows the repo name, and the footer names the weight source.
 - Install docs default to repo-level installs: `--scope project` for the plugin commands, or
   copying the skill into `<repo>/.claude/skills/`. No global (`~/.claude`) install is suggested any more.
 

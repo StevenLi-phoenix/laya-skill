@@ -57,6 +57,49 @@ Note the noul: the Python Router sends this English text to the **English** chec
 0.879. The browser sample loads **multilingual** and gets 0.045. Checkpoints disagree on zero-shot
 noul, which is one more reason to give `noul` explicit criteria and to calibrate on your own data.
 
+## Hosted demo and embedding (iframe / itch.io)
+
+Live demo: **https://stevenli-phoenix-work.itch.io/laya-webgpu** (itch.io HTML embed, 1100×820).
+Weights: **https://huggingface.co/Steven10429/laya-multilingual-webgpu**, the same fp32 split export
+as `model/`, public, Apache-2.0 with attribution.
+
+The page chooses its model URL in this order: `?model=<url>`, then `./model/` when served from
+`localhost` / `127.0.0.1`, then the Hugging Face mirror everywhere else. To point it at your own
+export (for example a fine-tune pushed to the Hub), pass `?model=https://huggingface.co/<you>/<repo>/resolve/main/`.
+
+Things that matter when embedding:
+
+- **The weights cannot live on itch.** itch caps HTML uploads at 200 MB per file and 500 MB in total,
+  and `encoder.onnx.data` alone is 1.23 GB. The code bundle is 16 files / 0.2 MiB. The model has to come
+  from a CORS-enabled host. Hugging Face returns `access-control-allow-origin` for the itch origin, both
+  on the `resolve/` redirect and on its CDN (`*`).
+- **CORS is mandatory.** Without it, loading fails with a misleading
+  `Incompatible model: ... does not contain 'rl_agent_config.json'`.
+- **WebGPU needs no permission.** It works in a cross-site iframe both with itch's exact
+  `allow="autoplay; fullscreen *; ...; cross-origin-isolated; web-share"` attribute and with no `allow` at all.
+  CacheStorage also works (partitioned per top-level site).
+- **Fit one viewport.** itch embeds with `scrolling="no"`, so on desktop the page is laid out to exactly
+  `100vh` and each panel scrolls on its own. Otherwise the Decide button ends up below the fold where
+  it cannot be reached.
+- Don't autostart. The first load downloads ~1.3 GB (about 33 s over a fast connection), so let
+  the user click "加载模型".
+
+`verify_iframe.py` reproduces the itch setup on three loopback origins: parent on `127.0.0.1`, game
+on `localhost` (cross-site, so an out-of-process iframe), and model on a third port with or without CORS:
+
+```bash
+uv run verify_iframe.py                       # scenarios: itch (itch allow attr + CORS), noallow, nocors (expected to fail)
+MODEL_URL=https://huggingface.co/Steven10429/laya-multilingual-webgpu/resolve/main/ uv run verify_iframe.py --scenario itch
+```
+
+| scenario (MBP M4 Pro, Chrome headless) | WebGPU | load | p50 / p90 |
+|---|---|---|---|
+| itch iframe, model from local CORS origin | ✓ | 5.4 s | 149 / 182 ms |
+| bare iframe (no `allow`) | ✓ | 6.1 s | 149 / 169 ms |
+| model origin without CORS | ✓ | fails (as expected) | — |
+| itch iframe, model from Hugging Face | ✓ | 34 s (cold download) | 147 / 165 ms |
+| **live itch page**, logged-out fresh profile | ✓ | 32.7 s | 146 / 171 ms |
+
 ## Other browser / edge options (verified to exist on 2026-09-29)
 
 - [`@r4ai/laya-web`](https://www.npmjs.com/package/@r4ai/laya-web) 0.2.0: ORT-web, WebGPU → WASM,

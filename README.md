@@ -6,6 +6,8 @@ A Claude Code skill (and plugin) for **typed-decision models**: a state (text / 
 `choice` / `score` / `noul` questions go in, and calibrated probabilities come out in one forward pass,
 with no text generation.
 
+**Live browser demo:** [stevenli-phoenix-work.itch.io/laya-webgpu](https://stevenli-phoenix-work.itch.io/laya-webgpu) (WebGPU, weights from [Steven10429/laya-multilingual-webgpu](https://huggingface.co/Steven10429/laya-multilingual-webgpu)).
+
 - **Laya** ([NandhaKishorM/laya](https://github.com/NandhaKishorM/laya), Apache-2.0): run locally on
   CPU / MPS / CUDA, **in the browser on WebGPU**, or as a Jev-compatible HTTP server.
 - **TypeSafe Jev** ([docs.typesafe.ai](https://docs.typesafe.ai)): the hosted, closed-weights API
