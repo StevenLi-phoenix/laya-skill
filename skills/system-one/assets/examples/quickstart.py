@@ -1,5 +1,9 @@
-import json, time, logging
+import json
+import logging
+import time
+
 from laya import Router
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 router = Router()
 state = "Hi, we were billed twice for March. Please refund the duplicate today or we will cancel our plan."

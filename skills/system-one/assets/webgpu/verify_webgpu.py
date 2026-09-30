@@ -33,7 +33,7 @@ DEFAULT_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 
 def serve(port: int) -> socketserver.TCPServer:
-    handler = lambda *a, **k: http.server.SimpleHTTPRequestHandler(*a, directory=str(HERE), **k)  # noqa: E731
+    handler = lambda *a, **k: http.server.SimpleHTTPRequestHandler(*a, directory=str(HERE), **k)
     http.server.SimpleHTTPRequestHandler.log_message = lambda *a, **k: None
     socketserver.ThreadingTCPServer.allow_reuse_address = True
     srv = socketserver.ThreadingTCPServer(("127.0.0.1", port), handler)

@@ -1,0 +1,29 @@
+{
+ "department": {
+  "type": "choice",
+  "instructions": "Which team should handle this ticket?",
+  "criteria": {
+   "billing": "invoices, charges, refunds, payment methods",
+   "technical": "bugs, crashes, errors, outages, performance",
+   "account": "login, password, profile, permissions, deleting the account",
+   "sales": "pricing questions, plans, upgrades, quotes"
+  }
+ },
+ "urgency": {
+  "type": "score",
+  "instructions": "How urgent is this ticket?",
+  "criteria": [
+   "not urgent: a question or minor annoyance",
+   "soon: something is broken but there is a workaround",
+   "blocking: work or money is stopped right now"
+  ]
+ },
+ "churn_risk": {
+  "type": "noul",
+  "instructions": "Does the customer threaten to cancel, leave or switch to a competitor?",
+  "criteria": {
+   "true": "the customer says they will cancel, leave, or move to another product",
+   "false": "no threat to cancel or leave"
+  }
+ }
+}
