@@ -1,0 +1,18 @@
+laya-skill (system-one Claude Code skill)
+Copyright 2026 Steven Li
+
+This project packages tooling around Laya, which is developed by Convai Innovations and
+licensed under the Apache License 2.0: https://github.com/NandhaKishorM/laya
+
+Third-party code included in this repository, unmodified except for an attribution header:
+  - skills/system-one/scripts/vendor/export_onnx_flat.py   <- laya scripts/export_onnx.py @ 6d942c9
+  - skills/system-one/scripts/vendor/export_onnx_split.py  <- laya laya-ts/scripts/export_onnx.py @ 6d942c9
+  - skills/system-one/assets/webgpu/vendor/laya-ts/*.js    <- compiled output of laya laya-ts/ @ 6d942c9
+The training loop in skills/system-one/scripts/finetune_laya.py is adapted from laya
+notebooks/laya_finetune_typed_decisions_mps.py @ 6d942c9.
+
+No model weights are included. Laya checkpoints (convaiinnovations/laya on Hugging Face) are
+downloaded at run time under their own license.
+
+"Jev" and "TypeSafe" are names of TypeSafe AI's hosted product; this project is not affiliated
+with TypeSafe AI or Convai Innovations.

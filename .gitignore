@@ -1,0 +1,21 @@
+# upstream checkout, envs, caches
+.laya-src/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.transfer/
+# run outputs (checkpoints, ONNX exports, reports, raw API responses)
+runs/
+# weights and exports must never be committed
+model/
+*.onnx
+*.onnx.data
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+.env
+.env.*
+.DS_Store

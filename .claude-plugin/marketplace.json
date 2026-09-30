@@ -1,0 +1,15 @@
+{
+  "name": "laya-skill",
+  "description": "System One typed decisions (Laya + TypeSafe Jev) packaged as a Claude Code skill.",
+  "owner": {
+    "name": "Steven Li",
+    "url": "https://github.com/StevenLi-phoenix"
+  },
+  "plugins": [
+    {
+      "name": "system-one",
+      "source": "./",
+      "description": "Run, compare, fine-tune and serve Laya; call TypeSafe Jev; WebGPU browser sample."
+    }
+  ]
+}

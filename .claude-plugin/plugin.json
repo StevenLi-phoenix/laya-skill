@@ -1,0 +1,13 @@
+{
+  "name": "system-one",
+  "version": "0.1.0",
+  "description": "Typed-decision (System One) models for Claude Code: run Laya locally or in the browser (WebGPU), call TypeSafe Jev, swap between them, fine-tune + calibrate + evaluate Laya, export ONNX.",
+  "author": {
+    "name": "Steven Li",
+    "url": "https://github.com/StevenLi-phoenix"
+  },
+  "homepage": "https://github.com/StevenLi-phoenix/laya-skill",
+  "repository": "https://github.com/StevenLi-phoenix/laya-skill",
+  "license": "Apache-2.0",
+  "keywords": ["laya", "jev", "typesafe", "system-one", "typed-decisions", "classification", "calibration", "fine-tuning", "onnx", "webgpu"]
+}
