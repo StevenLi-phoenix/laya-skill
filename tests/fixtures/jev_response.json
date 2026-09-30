@@ -1,0 +1,12 @@
+{
+  "model": "jev-1.13.0",
+  "answers": {
+    "department": {"type": "choice", "choice": "billing", "confidence": 0.91,
+                   "probabilities": {"billing": 0.94, "technical": 0.03, "account": 0.02, "sales": 0.01}},
+    "urgency": {"type": "score", "score": 1.43, "confidence": 0.35,
+                "legend": {"0": "not urgent", "1": "soon", "2": "blocking"},
+                "probabilities": {"0": 0.0, "1": 0.57, "2": 0.43}},
+    "churn_risk": {"type": "noul", "noul": 0.97}
+  },
+  "usage": {"input_tokens": 112, "output_tokens": 0}
+}
