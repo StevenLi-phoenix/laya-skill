@@ -1,0 +1,6 @@
+model/
+.laya-src/
+*.onnx
+*.onnx.data
+*.safetensors
+screenshot.png
